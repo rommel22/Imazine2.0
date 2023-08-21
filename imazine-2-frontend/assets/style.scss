@@ -1,0 +1,80 @@
+$primary: #FED555;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+body {
+    background-color: #F2F2F2;
+}
+
+* {
+    font-family: 'Lato';
+}
+
+h1 {
+    font-weight: 600;
+}
+
+h2 {
+    font-size: 1.25em;
+    font-weight: 600;
+}
+
+.content-container-overflow {
+    border-radius: 24px;
+    background-color: white;
+}
+
+.content-container {
+    border-radius: 24px;
+    background-color: white;
+    overflow: hidden;
+}
+
+.category-label {
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 0.2em;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+a {
+    @extend .link-offset-2;
+    text-decoration: none;
+    color: inherit;
+}
+
+.hl {
+    @extend .link-primary;
+    @extend .link-underline-primary;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+article {
+    line-height: 1.5em;
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 500;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+
+    h2 {
+        font-size: 2rem;
+    }
+
+    a {
+        @extend .hl;
+    }
+
+    img {
+        max-width: 100%;
+    }
+}

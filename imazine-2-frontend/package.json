@@ -1,0 +1,33 @@
+{
+  "name": "imazine-2-frontend",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxtjs/google-fonts": "^3.0.0-1",
+    "@sidebase/nuxt-session": "^0.2.7",
+    "@types/bootstrap": "^5.2.6",
+    "@types/markdown-it": "^12.2.3",
+    "nuxt": "^3.4.2",
+    "sass": "^1.60.0",
+    "sass-loader": "^10.4.1"
+  },
+  "dependencies": {
+    "@pinia-plugin-persistedstate/nuxt": "^1.1.1",
+    "@pinia/nuxt": "^0.4.9",
+    "@popperjs/core": "^2.11.7",
+    "bootstrap": "^5.3.0-alpha3",
+    "bootstrap-icons": "^1.10.4",
+    "javascript-time-ago": "^2.5.9",
+    "markdown-it": "^13.0.1",
+    "pinia": "^2.0.35"
+  },
+  "overrides": {
+    "vue": "latest"
+  }
+}

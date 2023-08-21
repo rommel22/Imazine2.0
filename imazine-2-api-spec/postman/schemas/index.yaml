@@ -1,0 +1,595 @@
+openapi: "3.0.0"
+info:
+    version: "1.0.0"
+    title: "Imazine 2.0"
+    description: Imazine 2.0 API
+
+servers:
+    - url: "http://localhost:8080"
+
+paths:
+    /login:
+        post:
+            summary: Login
+            security: []
+            requestBody:
+                    content:
+                        "multipart/form-data":
+                            schema:
+                                properties:
+                                    npm:
+                                        type: string
+                                        description: only contains numbers
+                                    password:
+                                        type: string
+            responses:
+                200:
+                    description: Logged in
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    apiKey:
+                                        type: string
+                                    user:
+                                        $ref: "#/components/schemas/user"
+    /logout:
+        post:
+            summary: Logout
+            responses:
+                200:
+                    description: Logged out
+                
+    /articles:
+        get:
+            summary: Get all articles
+            description: Get all articles. Fetches 10 items at a time
+            parameters:
+                - name: category
+                  description: defaults to all categories if not provided
+                  in: query
+                  schema:
+                      $ref: "#/components/schemas/articleCategoryId"
+                - name: page
+                  description: defaults to 1 (first page) if not provided
+                  in: query
+                  schema:
+                      type: integer
+                - name: search
+                  in: query
+                  description: |
+                    mostly for creator page \
+                    If using search query, page query will not apply (fetch all results) \
+                    Search query should be >3 characters in length to take effect
+                  schema:
+                      type: string
+            responses:
+                200:
+                    description: All articles on the specified page, corresponding to `category` if provided
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/articleListCard"
+        post:
+            summary: Create new article
+            description: Create new article. For a category, only users with edit access to that category is able to create new article on that category
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                title:
+                                    type: string
+                                category_id:
+                                    $ref: "#/components/schemas/articleCategoryId"
+                                cover_image:
+                                    type: string
+                                    format: binary
+                                markdown_content:
+                                    type: string
+                                    description: New lines are encoded in `\n` character
+                                    format: markdown
+            responses:
+                "200":
+                    description: The mew article
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/article"
+    /articles/{articleId}:
+        parameters:
+            - name: articleId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/articleId"
+        get:
+            summary: Get an article
+            responses:
+                "200":
+                    description: The article corresponding to the provided `articleId`
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/article"
+        put:
+            summary: Edit an article
+            description: Edit an article. For a category, only users with edit access to that category is able to edit an article on that category.\nIf changing category, the user editing the article should also have edit access to that category
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                title:
+                                    type: string
+                                category_id:
+                                    $ref: "#/components/schemas/articleCategoryId"
+                                cover_image:
+                                    type: string
+                                    format: binary
+                                    description: Not required. If not provided, the existing cover image will be kept
+                                markdown_content:
+                                    type: string
+                                    description: New lines are encoded in `\n` character
+                                    format: markdown
+            responses:
+                "200":
+                    description: The edited article
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/article"
+        delete:
+            summary: Delete an article
+            description: Can only be done by admin
+            responses:
+                "200":
+                    description: Article deleted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/article"
+                "403":
+                    description: forbidden
+    /categories:
+        get:
+            summary: Get all categories
+            description: Get all categories to be displayed in category selection sidebar
+            responses:
+                "200":
+                    description: All categories
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/articleCategory"
+        post:
+            summary: Create new category
+            description: Can only be done by admin
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                name:
+                                    description: Category name
+                                    type: string
+            responses:
+                "200":
+                    description: category created
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/articleCategory"
+                "403":
+                    description: forbidden
+        
+
+    /categories/{categoryId}:
+        parameters:
+            - name: categoryId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/articleCategoryId"
+        get:
+            summary: get a category
+            responses:
+                "200":
+                    description: The requested category
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/articleCategory"
+        put:
+            summary: Edit a category
+            description: Can only be done by admin
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                name:
+                                    description: New category name
+                                    type: string
+            responses:
+                "200":
+                    description: Category edited
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/articleCategory"
+                "403":
+                    description: forbidden
+        delete:
+            summary: Delete a category
+            description: Can only be done by admin
+            responses:
+                "200":
+                    description: Category deleted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/articleCategory"
+                "403":
+                    description: forbidden
+    /admin/categories/edit-access:
+        get:
+            summary: Get all users with article edit access to a category
+            parameters:
+                - name: category
+                  in: query
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/articleCategoryId"
+            responses:
+                200:
+                    description: All users with article edit access to the category by `category` id
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    category:
+                                        type: object
+                                        $ref: "#/components/schemas/articleCategory"
+                                    users:
+                                        type: array
+                                        items:
+                                            $ref: "#/components/schemas/userSmall"
+        post:
+            summary: Add a category-user article edit pair
+            description: Add a category-user article edit pair. Admin only
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                user_id:
+                                    $ref: "#/components/schemas/userId"
+                                category_id:
+                                    $ref: "#/components/schemas/articleCategoryId"
+            responses:
+                200:
+                    description: All users with article edit access to the category by `category` id
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    category:
+                                        type: object
+                                        $ref: "#/components/schemas/articleCategory"
+                                    users:
+                                        type: array
+                                        items:
+                                            $ref: "#/components/schemas/userSmall"
+                403:
+                    description: forbidden
+        delete:
+            summary: Remove a category-user article edit pair
+            description: Remove a category-user article edit pair. Admin only
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                user_id:
+                                    $ref: "#/components/schemas/userId"
+                                category_id:
+                                    $ref: "#/components/schemas/articleCategoryId"
+            responses:
+                200:
+                    description: All users with article edit access to the category by `category` id
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    category:
+                                        type: object
+                                        $ref: "#/components/schemas/articleCategory"
+                                    users:
+                                        type: array
+                                        items:
+                                            $ref: "#/components/schemas/userSmall"
+                403:
+                    description: forbidden
+
+    /creators/articles/{categoryId}:
+        parameters:
+            - name: categoryId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/articleCategoryId"
+        get:
+            summary: Gets all articles corresponding to `categoryId`
+            description: Gets all articles corresponding to `categoryId`. Sorted by newest
+            parameters:
+                - name: search
+                  description: Search query
+                  in: query
+                  schema:
+                    type: string
+
+            responses:
+                200:
+                    description: List of articles
+                    content:
+                        application/json:
+                                schema:
+                                    type: array
+                                    items:
+                                        $ref: "#/components/schemas/articleListCard"
+            
+    /users:
+        get:
+            summary: Search for users
+            description: Search for users. Admin only
+            parameters:
+                - name: search
+                  description: Search query
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: List of users with that search param
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/userSmall"
+    /profile/profile-picture:
+        post:
+            summary: Upload a new profile picture
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                image:
+                                    type: string
+                                    format: binary
+            responses:
+                200:
+                    description: Changing profile picture successful
+    /profile/password:
+        post:
+            summary: Change password
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                oldPassword:
+                                    type: string
+                                newPassword:
+                                    type: string
+                                repeatNewPassword:
+                                    type: string
+            responses:
+                200:
+                    description: Changing password successful
+                400:
+                    description: oldPassword might not match old password or newPassword might not match repeatNewPassword
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    message:
+                                        type: string
+    /profile:
+        put:
+            summary: Change profile data
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                email:
+                                    type: string
+            responses:
+                200:
+                    description: Changing password successful
+    /admin/users:
+        post:
+            summary: Add an user
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                npm:
+                                    type: string
+                                name:
+                                    type: string
+                                email:
+                                    type: string
+            responses:
+                 "200":
+                    description: Adding user successful
+    /admin/users/{userId}:
+        parameters:
+            - name: userId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/userId"
+        put:
+            summary: Edit an user
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                npm:
+                                    type: string
+                                name:
+                                    type: string
+            responses:
+                200:
+                    description: Successfully edited
+        delete:
+            summary: Delete an user
+            description: |
+                Deletes an user \
+                might get ugly when there's FK constraint violation from articles so we'll figure out later :)
+            responses:
+                200:
+                    description: Successfully deleted
+            
+    /admin/users/add-csv:
+        post:
+            summary: Add users from a csv file
+            description: |
+                Add users from a csv file \
+                The csv file contains two fields: `npm, name`
+            requestBody:
+                content:
+                    "multipart/form-data":
+                        schema:
+                            properties:
+                                file:
+                                    type: string
+                                    format: binary
+            responses:
+                 "200":
+                    description: Adding users successful
+
+
+
+components:
+    schemas:
+        userId:
+            description: The unique identifier of an user
+            type: string
+            format: uuid
+        user:
+            description: An user object
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/userId"
+                name:
+                    type: string
+                npm:
+                    type: string
+                profile_picture_link:
+                    type: string
+                email:
+                    type: string
+                is_admin:
+                    type: boolean
+                has_article_edit_access:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/articleCategory"
+        userSmall:
+            description: Small user info
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/userId"
+                name:
+                    type: string
+                npm:
+                    type: string
+                profile_picture_link:
+                    type: string
+
+        articleCategoryId:
+            description: The unique identifier of an article category
+            type: integer
+        articleCategory:
+            description: An article category object
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/articleCategoryId"
+                name:
+                    type: string
+
+        articleId:
+            description: The unique identifier of an article
+            type: string
+        article:
+            description: An article object
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/articleId"
+                creator:
+                    $ref: "#/components/schemas/userSmall"
+                category:
+                    $ref: "#/components/schemas/articleCategory"
+                coverUrl:
+                    type: string
+                title:
+                    type: string
+                markdown_content:
+                    type: string
+                viewer_count:
+                    type: integer
+                created_at:
+                    type: string
+        articleListCard:
+            description: for home page presenting
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/articleId"
+                category:
+                    $ref: "#/components/schemas/articleCategory"
+                coverUrl:
+                    type: string
+                title:
+                    type: string
+                created_at:
+                    type: string
+        articleSmallListItem:
+            description: for creator-only page
+            type: object
+            properties:
+                id:
+                    $ref: "#/components/schemas/articleId"
+                title:
+                    type: string
+                creator:
+                    $ref: "#/components/schemas/user"
+                created_at:
+                    type: string
+    securitySchemes:
+        apiKey:
+            type: http
+            scheme: bearer
+
+security:
+    - apiKey: []
